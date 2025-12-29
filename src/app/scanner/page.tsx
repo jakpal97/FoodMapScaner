@@ -318,7 +318,7 @@ export default function ScannerPage() {
 
 			console.log('Wysyłam do AI...') // Debug w konsoli
 
-			const response = await fetch('/api/analyze', {
+			const response = await fetch('/api/analyze-image', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ image: compressedImage }),
