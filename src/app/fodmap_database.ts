@@ -77,7 +77,7 @@ export const ingredientDatabase: Record<string, IngredientDetails> = {
 		symptoms: ['Wzdęcia (jeśli główny składnik)', 'Dyskomfort'],
 		whereFound: ['Chleb', 'Makaron', 'Ciastka', 'Pizza'],
 		monashStatus: 'MODERATE',
-		safeServing: ''Do 2 kromek chleba dziennie',
+		safeServing: 'Do 2 kromek chleba dziennie',
 		alternatives: ['Chleb bezglutenowy', 'Mąka ryżowa', 'Mąka gryczana', 'Orkisz (niektórzy tolerują)'],
 		aliases: ['pszenica', 'mąka pszenna', 'pszenny', 'pszenna', 'gluten pszenny'],
 	},

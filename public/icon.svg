@@ -1,0 +1,22 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Tło gradient emerald -->
+  <rect width="512" height="512" rx="120" fill="url(#gradient)"/>
+  
+  <!-- Gradient definition -->
+  <defs>
+    <linearGradient id="gradient" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#047857"/>
+      <stop offset="100%" stop-color="#14b8a6"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Leaf icon (simplified) -->
+  <g transform="translate(128, 128) scale(4)">
+    <path d="M11 20a7.93 7.93 0 0 1-5.7-2.3 8 8 0 1 1 11.4-11.4 8 8 0 0 1-5.7 13.7zm0-14.4A5.6 5.6 0 0 0 7 17.5a6 6 0 0 0 8.5 0A5.6 5.6 0 0 0 11 5.6z" fill="white"/>
+    <path d="M13 11h-4v4h4z" fill="white" transform="translate(-2, -2) scale(1.5)"/>
+  </g>
+  
+  <!-- Text "FD" dla FODMAP -->
+  <text x="256" y="340" font-family="Arial, sans-serif" font-size="140" font-weight="bold" fill="white" text-anchor="middle">🌱</text>
+</svg>
+
