@@ -60,7 +60,7 @@ export default function LandingPage() {
 					className="bg-white/80 backdrop-blur-xl border border-white/60 px-6 py-3 rounded-full shadow-lg shadow-emerald-900/5 flex items-center gap-8">
 					<div className="flex items-center gap-2 font-bold text-emerald-950 text-lg tracking-tight">
 						<Leaf size={20} className="text-emerald-500" />
-						<span>Skaner Jelita</span>
+						<span>Food Pal</span>
 					</div>
 
 					<div className="hidden md:flex gap-6 text-sm font-medium text-slate-500">
@@ -274,7 +274,7 @@ export default function LandingPage() {
 						</p>
 						<Link href="/scanner">
 							<button className="px-10 py-5 bg-emerald-900 text-white rounded-full font-bold text-lg hover:bg-emerald-800 hover:scale-105 transition-all shadow-xl shadow-emerald-900/20">
-								Uruchom Skaner Jelita
+								Uruchom Skaner produktów
 							</button>
 						</Link>
 						<p className="mt-6 text-xs text-slate-400 font-medium">
