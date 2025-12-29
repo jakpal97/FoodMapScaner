@@ -3,6 +3,7 @@
   "short_name": "Skaner Jelita",
   "description": "Skanuj produkty i wykrywaj składniki FODMAP za pomocą AI. Aplikacja dla osób z IBS i SIBO.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#F8FAF9",
   "theme_color": "#047857",
