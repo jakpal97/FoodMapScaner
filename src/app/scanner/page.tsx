@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
 	ScanBarcode,
@@ -10,28 +11,50 @@ import {
 	Loader2,
 	Camera,
 	X,
-	ImagePlus,
-	ArrowRight,
+	ArrowLeft,
 	Zap,
 	Upload,
+	Leaf,
+	ArrowRight,
 } from 'lucide-react'
+import { LucideIcon } from 'lucide-react'
 import { Html5Qrcode } from 'html5-qrcode'
-import { analyzeIngredients } from '@/app/fodmap_rules'
+import { analyzeIngredients } from '@/app/fodmap_rules' // Upewnij się, że masz ten plik
 
-// --- TYPY ---
+// Dodaj to na górze pliku, pod importami
+const compressImage = (base64Str: string, maxWidth = 1024, quality = 0.7): Promise<string> => {
+	return new Promise(resolve => {
+		const img = new Image()
+		img.src = base64Str
+		img.onload = () => {
+			const canvas = document.createElement('canvas')
+			let width = img.width
+			let height = img.height
+
+			// Skalowanie w dół
+			if (width > maxWidth) {
+				height = Math.round((height * maxWidth) / width)
+				width = maxWidth
+			}
+
+			canvas.width = width
+			canvas.height = height
+			const ctx = canvas.getContext('2d')
+			ctx?.drawImage(img, 0, 0, width, height)
+
+			// Kompresja do JPEG 70%
+			resolve(canvas.toDataURL('image/jpeg', quality))
+		}
+	})
+}
+
+// --- TYPY (TypeScript) ---
 type AnalysisStatus = 'RED' | 'YELLOW' | 'GREEN' | 'UNKNOWN'
 
 interface AnalysisResult {
 	status: AnalysisStatus
 	found: string[]
 	message: string
-}
-
-interface ResultCardProps {
-	analysis: AnalysisResult
-	productName: string
-	productBrand: string
-	source: string
 }
 
 interface ResultData {
@@ -41,52 +64,55 @@ interface ResultData {
 	source: string
 }
 
-// --- KOMPONENT WYNIKU (Bez zmian) ---
-const ResultCard = ({ analysis, productName, productBrand, source }: ResultCardProps) => {
+// --- KOMPONENT WYNIKU (JASNY MOTYW - PREMIUM HEALTH) ---
+const ResultCard = ({
+	analysis,
+	productName,
+	productBrand,
+	source,
+}: {
+	analysis: AnalysisResult
+	productName: string
+	productBrand: string
+	source: string
+}) => {
 	const { status, found, message } = analysis
 
 	const statusConfig: Record<
 		AnalysisStatus,
-		{
-			bg: string
-			border: string
-			text: string
-			icon: typeof XCircle | typeof AlertTriangle | typeof CheckCircle
-			title: string
-			glow: string
-		}
+		{ bg: string; border: string; text: string; icon: LucideIcon; title: string; indicator: string }
 	> = {
 		RED: {
-			bg: 'bg-red-950/40',
-			border: 'border-red-500/50',
-			text: 'text-red-400',
+			bg: 'bg-red-50',
+			border: 'border-red-200',
+			text: 'text-red-700',
 			icon: XCircle,
-			title: 'UNIKAJ (High FODMAP)',
-			glow: 'shadow-[0_0_40px_-10px_rgba(239,68,68,0.5)]',
+			title: 'UNIKAJ',
+			indicator: 'bg-red-500',
 		},
 		YELLOW: {
-			bg: 'bg-yellow-950/40',
-			border: 'border-yellow-500/50',
-			text: 'text-yellow-400',
+			bg: 'bg-amber-50',
+			border: 'border-amber-200',
+			text: 'text-amber-700',
 			icon: AlertTriangle,
 			title: 'OSTROŻNIE',
-			glow: 'shadow-[0_0_40px_-10px_rgba(234,179,8,0.5)]',
+			indicator: 'bg-amber-500',
 		},
 		GREEN: {
-			bg: 'bg-green-950/40',
-			border: 'border-green-500/50',
-			text: 'text-green-400',
+			bg: 'bg-emerald-50',
+			border: 'border-emerald-200',
+			text: 'text-emerald-700',
 			icon: CheckCircle,
 			title: 'BEZPIECZNE',
-			glow: 'shadow-[0_0_40px_-10px_rgba(34,197,94,0.5)]',
+			indicator: 'bg-emerald-500',
 		},
 		UNKNOWN: {
-			bg: 'bg-slate-900/40',
-			border: 'border-slate-700',
-			text: 'text-slate-400',
+			bg: 'bg-slate-50',
+			border: 'border-slate-200',
+			text: 'text-slate-600',
 			icon: AlertTriangle,
-			title: 'Błąd danych',
-			glow: '',
+			title: 'Brak danych',
+			indicator: 'bg-slate-400',
 		},
 	}
 
@@ -95,44 +121,41 @@ const ResultCard = ({ analysis, productName, productBrand, source }: ResultCardP
 
 	return (
 		<motion.div
-			initial={{ opacity: 0, y: 20, scale: 0.95 }}
+			initial={{ opacity: 0, y: 20, scale: 0.98 }}
 			animate={{ opacity: 1, y: 0, scale: 1 }}
-			className={`rounded-3xl border ${config.border} ${config.bg} p-6 backdrop-blur-md ${config.glow} overflow-hidden relative shadow-2xl`}>
-			<div
-				className={`absolute inset-0 bg-gradient-to-br from-${
-					config.text.split('-')[1]
-				}-500/10 to-transparent opacity-50`}
-			/>
-
+			className={`rounded-3xl border ${config.border} ${config.bg} p-6 shadow-xl shadow-slate-200/50 relative overflow-hidden`}>
 			<div className="relative z-10">
-				<div className="mb-6 border-b border-white/5 pb-4 flex justify-between items-start">
+				<div className="flex justify-between items-start mb-6 border-b border-slate-200/50 pb-4">
 					<div>
-						<h3 className="text-white text-2xl font-bold leading-tight">{productName}</h3>
-						<p className="text-slate-400 text-sm mt-1">{productBrand}</p>
+						<h3 className="text-slate-900 text-xl font-bold leading-tight">{productName}</h3>
+						<p className="text-slate-500 text-sm mt-1">{productBrand}</p>
 					</div>
 					{source === 'AI' && (
-						<span className="bg-indigo-500/20 text-indigo-300 text-[10px] font-bold px-2 py-1 rounded border border-indigo-500/30 flex items-center gap-1">
+						<span className="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 border border-indigo-200">
 							<Zap size={10} fill="currentColor" /> AI VISION
 						</span>
 					)}
 				</div>
 
-				<div className={`flex items-start gap-4 mb-6 ${config.text}`}>
-					<Icon size={48} className="shrink-0 mt-1" />
+				<div className="flex items-center gap-4 mb-6">
+					<div
+						className={`w-14 h-14 rounded-full ${config.indicator} flex items-center justify-center text-white shadow-lg shrink-0`}>
+						<Icon size={28} />
+					</div>
 					<div>
-						<h4 className="text-2xl font-bold leading-none mb-2">{config.title}</h4>
-						<p className="text-slate-200 text-sm leading-relaxed opacity-90">{message}</p>
+						<h4 className={`text-2xl font-bold ${config.text}`}>{config.title}</h4>
+						<p className="text-slate-600 text-sm font-medium mt-1">{message}</p>
 					</div>
 				</div>
 
 				{found.length > 0 && (
-					<div className="bg-slate-950/50 rounded-xl p-4 border border-slate-800/60">
-						<p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-3">Wykryte składniki:</p>
+					<div className="bg-white/60 rounded-xl p-4 border border-slate-200/60">
+						<p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-3">Wykryte składniki:</p>
 						<div className="flex flex-wrap gap-2">
 							{found.map((item, index) => (
 								<span
 									key={index}
-									className={`px-3 py-1.5 rounded-full text-xs font-bold border ${config.border} bg-slate-900 text-white capitalize shadow-sm`}>
+									className="px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200 text-slate-700 shadow-sm capitalize">
 									{item}
 								</span>
 							))}
@@ -144,23 +167,23 @@ const ResultCard = ({ analysis, productName, productBrand, source }: ResultCardP
 	)
 }
 
-export default function Home() {
+// --- GŁÓWNY KOMPONENT ---
+export default function ScannerPage() {
 	const [activeTab, setActiveTab] = useState<'scan' | 'ai-photo'>('scan')
 	const [barcode, setBarcode] = useState('')
-
 	const [loading, setLoading] = useState(false)
 	const [result, setResult] = useState<ResultData | null>(null)
 	const [error, setError] = useState<string | null>(null)
 
-	// Stan dla kamery (wspólny, ale obsłużymy różnie w zależności od taba)
+	// Kamera states
 	const [isCameraOpen, setIsCameraOpen] = useState(false)
 
-	// Refy
-	const scannerRef = useRef<Html5Qrcode | null>(null) // Dla kodów kreskowych (Html5Qrcode)
-	const videoRef = useRef<HTMLVideoElement | null>(null) // Dla AI Vision (Video element)
-	const streamRef = useRef<MediaStream | null>(null) // Przechowywanie strumienia wideo
+	// Refs
+	const scannerRef = useRef<Html5Qrcode | null>(null)
+	const videoRef = useRef<HTMLVideoElement | null>(null)
+	const streamRef = useRef<MediaStream | null>(null)
 
-	// --- 1. SKANER KODÓW (HTML5-QRCODE) ---
+	// --- 1. SKANER KODÓW ---
 	const startBarcodeScanner = () => {
 		setIsCameraOpen(true)
 		setResult(null)
@@ -172,7 +195,7 @@ export default function Home() {
 				.start(
 					{ facingMode: 'environment' },
 					{ fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
-					(decodedText: string) => {
+					decodedText => {
 						stopBarcodeScanner()
 						setBarcode(decodedText)
 						handleScan(decodedText)
@@ -181,7 +204,7 @@ export default function Home() {
 				)
 				.catch(() => {
 					setIsCameraOpen(false)
-					setError('Błąd kamery. Sprawdź uprawnienia.')
+					setError('Brak dostępu do kamery.')
 				})
 		}, 100)
 	}
@@ -191,9 +214,7 @@ export default function Home() {
 			scannerRef.current
 				.stop()
 				.then(() => {
-					if (scannerRef.current) {
-						scannerRef.current.clear()
-					}
+					scannerRef.current?.clear()
 					setIsCameraOpen(false)
 				})
 				.catch(console.error)
@@ -202,7 +223,7 @@ export default function Home() {
 		}
 	}
 
-	// --- 2. API: OPEN FOOD FACTS ---
+	// --- 2. OPEN FOOD FACTS ---
 	const handleScan = async (codeToScan?: string) => {
 		const code = codeToScan || barcode
 		if (!code) return
@@ -221,9 +242,8 @@ export default function Home() {
 			}
 
 			const product = data.product
-			const ingredientsText =
-				product.ingredients_text_pl || product.ingredients_text_en || product.ingredients_text || ''
-			const analysisResult = analyzeIngredients(ingredientsText) as AnalysisResult
+			const txt = product.ingredients_text_pl || product.ingredients_text_en || product.ingredients_text || ''
+			const analysisResult = analyzeIngredients(txt) as AnalysisResult
 
 			setResult({
 				analysis: analysisResult,
@@ -232,41 +252,35 @@ export default function Home() {
 				source: 'DB',
 			})
 		} catch {
-			setError('network_error')
+			setError('Błąd połączenia.')
 		} finally {
 			setLoading(false)
 		}
 	}
 
-	// --- 3. AI VISION CAMERA (WIDEO NA ŻYWO) ---
+	// --- 3. AI VISION ---
 	const startAiCamera = async () => {
 		setIsCameraOpen(true)
 		setResult(null)
 		setError(null)
-
 		try {
-			const stream = await navigator.mediaDevices.getUserMedia({
-				video: { facingMode: 'environment' },
-			})
+			const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
 			streamRef.current = stream
-
-			// Czekamy na render elementu video
 			setTimeout(() => {
 				if (videoRef.current) {
 					videoRef.current.srcObject = stream
 					videoRef.current.play()
 				}
 			}, 100)
-		} catch (err: unknown) {
-			console.error(err)
+		} catch {
 			setIsCameraOpen(false)
-			setError('Nie udało się uruchomić aparatu. Sprawdź uprawnienia.')
+			setError('Brak dostępu do kamery.')
 		}
 	}
 
 	const stopAiCamera = () => {
 		if (streamRef.current) {
-			streamRef.current.getTracks().forEach((track: MediaStreamTrack) => track.stop())
+			streamRef.current.getTracks().forEach(track => track.stop())
 			streamRef.current = null
 		}
 		setIsCameraOpen(false)
@@ -274,81 +288,74 @@ export default function Home() {
 
 	const captureAiPhoto = () => {
 		if (!videoRef.current) return
-
-		// 1. Zrzut klatki z wideo do Canvas
 		const canvas = document.createElement('canvas')
 		canvas.width = videoRef.current.videoWidth
 		canvas.height = videoRef.current.videoHeight
 		const ctx = canvas.getContext('2d')
-		if (ctx && videoRef.current) {
-			ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height)
-		}
-
-		// 2. Konwersja do Base64
+		if (ctx) ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height)
 		const base64Image = canvas.toDataURL('image/jpeg')
-
-		// 3. Zatrzymaj kamerę i wyślij do AI
 		stopAiCamera()
 		sendToAi(base64Image)
 	}
 
-	// --- 4. WGRYWANIE PLIKU (FALLBACK) ---
 	const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0]
 		if (!file) return
-
 		const reader = new FileReader()
 		reader.readAsDataURL(file)
 		reader.onload = () => {
-			if (typeof reader.result === 'string') {
-				sendToAi(reader.result)
-			}
+			if (typeof reader.result === 'string') sendToAi(reader.result)
 		}
 	}
 
-	// --- 5. WYSYŁKA DO AI (Wspólna funkcja) ---
 	const sendToAi = async (base64Image: string) => {
 		setLoading(true)
 		setError(null)
 		setResult(null)
-
 		try {
+			// 1. KOMPRESJA (To jest klucz do sukcesu!)
+			const compressedImage = await compressImage(base64Image)
+
+			console.log('Wysyłam do AI...') // Debug w konsoli
+
 			const response = await fetch('/api/analyze', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ image: base64Image }),
+				body: JSON.stringify({ image: compressedImage }),
 			})
 
 			const aiData = await response.json()
+
+			// Jeśli AI zwróci błąd w JSONIE
 			if (aiData.error) throw new Error(aiData.error)
 
-			const status: AnalysisStatus =
-				aiData.status === 'RED' ||
-				aiData.status === 'YELLOW' ||
-				aiData.status === 'GREEN' ||
-				aiData.status === 'UNKNOWN'
-					? aiData.status
-					: 'UNKNOWN'
+			// 2. Obsługa wyniku
+			const status: AnalysisStatus = ['RED', 'YELLOW', 'GREEN'].includes(aiData.status) ? aiData.status : 'UNKNOWN'
 
 			setResult({
 				analysis: {
 					status: status,
 					found: aiData.found || [],
-					message: status === 'RED' ? 'AI wykryło składniki niedozwolone.' : 'AI oceniło skład jako bezpieczny.',
+					// Jeśli status UNKNOWN, wyświetl komunikat od AI (np. "Nie widzę składu")
+					message:
+						status === 'UNKNOWN'
+							? aiData.message || 'Nie udało się odczytać składu. Spróbuj ponownie.'
+							: status === 'RED'
+							? 'AI wykryło składniki niedozwolone.'
+							: 'AI oceniło skład jako bezpieczny.',
 				},
 				productName: 'Analiza ze zdjęcia',
 				productBrand: 'Skan AI Vision',
 				source: 'AI',
 			})
-		} catch (err: unknown) {
+		} catch (err) {
 			console.error(err)
-			setError('Błąd analizy AI. Spróbuj wyraźniejszego zdjęcia.')
+			setError('Nie udało się odczytać zdjęcia. Upewnij się, że tekst składników jest czytelny i dobrze oświetlony.')
 		} finally {
 			setLoading(false)
 		}
 	}
 
-	// Funkcja czyszcząca przy zmianie taba
 	const switchTab = (tab: 'scan' | 'ai-photo') => {
 		setActiveTab(tab)
 		setResult(null)
@@ -358,109 +365,112 @@ export default function Home() {
 	}
 
 	return (
-		<main className="min-h-screen bg-[#020617] text-slate-200 p-4 pb-20 flex flex-col items-center relative overflow-x-hidden selection:bg-indigo-500/30">
-			{/* TŁO */}
-			<div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-				<div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px] mix-blend-screen animate-pulse" />
-				<div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-purple-600/20 rounded-full blur-[100px] mix-blend-screen" />
-			</div>
+		<div className="min-h-screen bg-[#F8FAF9] text-slate-800 font-sans selection:bg-emerald-200">
+			{/* NAVBAR */}
+			<nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-emerald-100/50">
+				<div className="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
+					<Link href="/" className="flex items-center gap-2 text-slate-500 hover:text-emerald-700 transition-colors">
+						<ArrowLeft size={20} />
+						<span className="text-sm font-bold">Wróć</span>
+					</Link>
+					<div className="flex items-center gap-2 font-bold text-emerald-950">
+						<Leaf size={18} className="text-emerald-500" />
+						<span>Skaner Jelita</span>
+					</div>
+					<div className="w-8"></div> {/* Spacer dla symetrii */}
+				</div>
+			</nav>
 
-			<div className="w-full max-w-md z-10 flex flex-col gap-6">
-				<header className="text-center mt-8 mb-2">
-					<h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
-						Skaner{' '}
-						<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Jelita</span>
-					</h1>
-					<p className="text-slate-400 text-sm">Baza Danych + AI Vision</p>
-				</header>
-
-				{/* --- ZAKŁADKI --- */}
-				<div className="bg-slate-900/80 backdrop-blur-md p-1.5 rounded-2xl flex border border-white/5 shadow-lg">
+			<main className="pt-24 pb-20 px-4 max-w-md mx-auto flex flex-col items-center">
+				{/* TABS (JASNE) */}
+				<div className="w-full bg-white p-1.5 rounded-2xl flex mb-6 shadow-sm border border-slate-200">
 					<button
 						onClick={() => switchTab('scan')}
 						className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
-							activeTab === 'scan' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'
+							activeTab === 'scan'
+								? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200'
+								: 'text-slate-400 hover:text-slate-600'
 						}`}>
 						<ScanBarcode size={18} /> Kod EAN
 					</button>
 					<button
 						onClick={() => switchTab('ai-photo')}
 						className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
-							activeTab === 'ai-photo' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'
+							activeTab === 'ai-photo'
+								? 'bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200'
+								: 'text-slate-400 hover:text-slate-600'
 						}`}>
-						<ImagePlus size={18} /> AI Vision
+						<Zap size={18} /> AI Vision
 					</button>
 				</div>
 
-				{/* --- WIDOK 1: SKANER KODÓW EAN --- */}
+				{/* --- WIDOK 1: SKANER KODÓW --- */}
 				{activeTab === 'scan' && (
-					<div className="flex flex-col gap-4">
+					<div className="w-full flex flex-col gap-4">
 						<AnimatePresence>
-							{isCameraOpen && (
+							{isCameraOpen ? (
 								<motion.div
 									initial={{ opacity: 0, height: 0 }}
 									animate={{ opacity: 1, height: 'auto' }}
 									exit={{ opacity: 0, height: 0 }}
-									className="relative rounded-3xl overflow-hidden border-2 border-indigo-500 bg-black aspect-square">
+									className="relative rounded-3xl overflow-hidden border-4 border-emerald-500 bg-black aspect-square shadow-2xl">
 									<button
 										onClick={stopBarcodeScanner}
-										className="absolute top-4 right-4 text-white bg-black/50 p-2 rounded-full z-20">
+										className="absolute top-4 right-4 text-white bg-black/50 p-2 rounded-full z-20 hover:bg-black/70">
 										<X size={20} />
 									</button>
 									<div id="reader" className="w-full h-full"></div>
 								</motion.div>
+							) : (
+								<motion.div
+									initial={{ opacity: 0 }}
+									animate={{ opacity: 1 }}
+									className="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
+									<button
+										onClick={startBarcodeScanner}
+										className="w-full aspect-[4/3] bg-emerald-50 border-2 border-dashed border-emerald-200 rounded-2xl flex flex-col items-center justify-center gap-3 text-emerald-700 hover:bg-emerald-100 transition-colors group mb-6">
+										<div className="p-4 bg-white rounded-full shadow-sm group-hover:scale-110 transition-transform text-emerald-600">
+											<Camera size={32} />
+										</div>
+										<span className="font-bold">Uruchom Kamerę</span>
+									</button>
+
+									<div className="flex gap-2">
+										<input
+											type="text"
+											value={barcode}
+											onChange={e => setBarcode(e.target.value)}
+											placeholder="Lub wpisz kod EAN..."
+											className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+										/>
+										<button
+											onClick={() => handleScan(undefined)}
+											className="bg-emerald-900 hover:bg-emerald-800 text-white rounded-xl px-5 flex items-center justify-center transition-colors">
+											<ArrowRight size={20} />
+										</button>
+									</div>
+								</motion.div>
 							)}
 						</AnimatePresence>
-
-						{!isCameraOpen && (
-							<motion.div
-								initial={{ opacity: 0 }}
-								animate={{ opacity: 1 }}
-								className="bg-slate-900/60 backdrop-blur-xl p-5 rounded-3xl border border-white/10 shadow-xl">
-								<button
-									onClick={startBarcodeScanner}
-									className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl py-5 flex items-center justify-center gap-3 shadow-lg mb-6 active:scale-[0.98]">
-									<Camera size={24} /> <span className="font-bold text-lg">Skanuj Kod</span>
-								</button>
-								<div className="flex gap-3">
-									<input
-										type="text"
-										value={barcode}
-										onChange={e => setBarcode(e.target.value)}
-										placeholder="Lub wpisz kod EAN..."
-										className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 text-white text-sm focus:border-indigo-500 outline-none font-mono"
-									/>
-									<button
-										onClick={() => handleScan(undefined)}
-										className="bg-slate-800 text-white rounded-xl px-5 flex items-center justify-center">
-										<ArrowRight size={20} />
-									</button>
-								</div>
-							</motion.div>
-						)}
 					</div>
 				)}
 
-				{/* --- WIDOK 2: AI VISION CAMERA (POPRAWIONE DLA KOMPUTERÓW) --- */}
+				{/* --- WIDOK 2: AI VISION --- */}
 				{activeTab === 'ai-photo' && (
-					<div className="flex flex-col gap-4">
-						{/* 1. OKNO KAMERY AI */}
+					<div className="w-full flex flex-col gap-4">
 						<AnimatePresence>
-							{isCameraOpen && (
+							{isCameraOpen ? (
 								<motion.div
 									initial={{ opacity: 0, height: 0 }}
 									animate={{ opacity: 1, height: 'auto' }}
 									exit={{ opacity: 0, height: 0 }}
-									className="relative rounded-3xl overflow-hidden border-2 border-purple-500 bg-black aspect-[3/4] shadow-[0_0_50px_rgba(147,51,234,0.3)]">
+									className="relative rounded-3xl overflow-hidden border-4 border-indigo-500 bg-black aspect-[3/4] shadow-2xl">
 									<video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted></video>
-
-									{/* Przyciski sterowania */}
 									<button
 										onClick={stopAiCamera}
-										className="absolute top-4 right-4 text-white bg-black/50 p-2 rounded-full z-20 hover:bg-black/70">
+										className="absolute top-4 right-4 text-white bg-black/50 p-2 rounded-full z-20">
 										<X size={20} />
 									</button>
-
 									<div className="absolute bottom-6 left-0 right-0 flex justify-center z-20">
 										<button
 											onClick={captureAiPhoto}
@@ -468,90 +478,82 @@ export default function Home() {
 											<div className="w-16 h-16 bg-white rounded-full"></div>
 										</button>
 									</div>
-									<p className="absolute bottom-24 w-full text-center text-white/80 text-sm font-medium drop-shadow-md">
-										Zrób zdjęcie składu
-									</p>
+								</motion.div>
+							) : (
+								<motion.div
+									initial={{ opacity: 0 }}
+									animate={{ opacity: 1 }}
+									className="bg-white p-6 rounded-3xl border border-indigo-100 shadow-xl shadow-indigo-100/50">
+									<div className="bg-indigo-50 p-4 rounded-2xl mb-6 text-center border border-indigo-100">
+										<h4 className="font-bold text-indigo-900 mb-1">Inteligentna Analiza</h4>
+										<p className="text-indigo-700/70 text-sm">Zrób zdjęcie składu, a AI wykryje pułapki.</p>
+									</div>
+
+									<button
+										onClick={startAiCamera}
+										className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 mb-4 transition-all active:scale-[0.98]">
+										<Camera size={20} /> Otwórz Aparat
+									</button>
+
+									<div className="relative flex items-center gap-3 mb-4">
+										<div className="h-px bg-slate-200 flex-1" />
+										<span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+											lub wgraj plik
+										</span>
+										<div className="h-px bg-slate-200 flex-1" />
+									</div>
+
+									<label className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors">
+										<Upload size={18} /> Wybierz z galerii
+										<input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+									</label>
 								</motion.div>
 							)}
 						</AnimatePresence>
-
-						{/* 2. PANEL STARTOWY AI */}
-						{!isCameraOpen && (
-							<motion.div
-								initial={{ opacity: 0 }}
-								animate={{ opacity: 1 }}
-								className="bg-slate-900/60 backdrop-blur-xl p-5 rounded-3xl border border-purple-500/30 shadow-xl">
-								<div className="text-center mb-6">
-									<h3 className="text-white font-bold text-lg">AI Vision</h3>
-									<p className="text-slate-400 text-sm">Zrób zdjęcie składu – AI przeanalizuje etykietę w 3 sekundy.</p>
-								</div>
-
-								{/* Przycisk otwierający kamerę (VIDEO STREAM) */}
-								<button
-									onClick={startAiCamera}
-									className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:scale-[1.02] text-white rounded-xl py-5 font-bold flex items-center justify-center gap-3 cursor-pointer transition-all shadow-lg active:scale-[0.98] mb-4">
-									<Camera size={24} />
-									<span>Otwórz Aparat</span>
-								</button>
-
-								{/* Fallback: Wgrywanie pliku z dysku */}
-								<div className="relative flex items-center gap-3 mb-4">
-									<div className="h-px bg-slate-800 flex-1" />
-									<span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">lub wgraj plik</span>
-									<div className="h-px bg-slate-800 flex-1" />
-								</div>
-
-								<label className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors">
-									<Upload size={18} />
-									<span>Wybierz zdjęcie z galerii</span>
-									<input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-								</label>
-							</motion.div>
-						)}
 					</div>
 				)}
 
 				{/* --- WYNIKI --- */}
-				<div className="min-h-[200px]">
+				<div className="w-full mt-8 min-h-[100px]">
 					<AnimatePresence mode="wait">
 						{loading && (
 							<motion.div
 								initial={{ opacity: 0 }}
 								animate={{ opacity: 1 }}
 								exit={{ opacity: 0 }}
-								className="flex flex-col items-center justify-center py-12 text-slate-400">
-								<Loader2 className="animate-spin mb-4 text-indigo-500" size={40} />
-								<p className="text-sm font-medium animate-pulse">
-									{activeTab === 'ai-photo' ? 'Wysyłam do AI...' : 'Szukam w bazie...'}
-								</p>
+								className="text-center py-10">
+								<Loader2 className="animate-spin mx-auto text-emerald-500 mb-3" size={32} />
+								<p className="text-sm font-medium text-slate-400 animate-pulse">Analizuję produkt...</p>
 							</motion.div>
 						)}
 
 						{/* BŁĄD: BRAK PRODUKTU -> SUGESTIA AI */}
 						{error === 'missing_product' && !loading && (
 							<motion.div
-								initial={{ opacity: 0 }}
-								animate={{ opacity: 1 }}
-								className="bg-slate-800/80 border border-slate-700 p-8 rounded-3xl text-center">
-								<AlertTriangle size={32} className="text-yellow-500 mx-auto mb-3" />
-								<h3 className="text-white font-bold mb-2">Nieznany kod</h3>
-								<p className="text-slate-400 text-sm mb-6">Tego produktu nie ma w bazie.</p>
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								className="bg-white border border-slate-200 p-8 rounded-3xl text-center shadow-lg">
+								<div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-3 text-amber-500">
+									<AlertTriangle size={24} />
+								</div>
+								<h3 className="text-slate-900 font-bold mb-1">Brak w bazie</h3>
+								<p className="text-slate-500 text-sm mb-6">Nie znaleźliśmy tego kodu.</p>
 								<button
 									onClick={() => switchTab('ai-photo')}
-									className="w-full bg-purple-600 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-lg hover:bg-purple-500 transition-all flex items-center justify-center gap-2">
-									<Zap size={18} /> Przełącz na AI Vision
+									className="w-full bg-indigo-600 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2">
+									<Zap size={18} /> Użyj AI Vision
 								</button>
 							</motion.div>
 						)}
 
 						{/* INNE BŁĘDY */}
 						{error && error !== 'missing_product' && !loading && (
-							<div className="text-red-400 text-center p-4 bg-red-950/30 rounded-xl border border-red-500/20">
+							<div className="text-red-500 text-center p-4 bg-red-50 rounded-xl border border-red-100 text-sm font-medium">
 								{error}
 							</div>
 						)}
 
-						{/* KARTA WYNIKU */}
+						{/* WYNIK */}
 						{result && !loading && !error && (
 							<ResultCard
 								analysis={result.analysis}
@@ -562,7 +564,7 @@ export default function Home() {
 						)}
 					</AnimatePresence>
 				</div>
-			</div>
-		</main>
+			</main>
+		</div>
 	)
 }
