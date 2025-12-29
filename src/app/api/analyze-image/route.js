@@ -7,75 +7,92 @@ const openai = new OpenAI({
 
 export async function POST(req) {
   try {
-    const { image } = await req.json();
+    // 1. Sprawdź czy dane przychodzą
+    const body = await req.json();
+    const { image } = body;
 
     if (!image) {
+      console.error("❌ API: Brak zdjęcia w żądaniu");
       return NextResponse.json({ error: "Brak zdjęcia" }, { status: 400 });
     }
 
+    // console.log("✅ API: Otrzymano zdjęcie, wysyłam do OpenAI...");
+
+    // 2. Zapytanie do OpenAI
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini", 
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: `Jesteś ekspertem IBS. Analizujesz zdjęcia etykiet spożywczych.
-          Zwracaj TYLKO czysty JSON bez markdowna (\`\`\`json).
+          content: `Jesteś ekspertem FODMAP. Analizujesz zdjęcia etykiet.
+          Musisz zwrócić TYLKO poprawny JSON. Żadnego markdowna, żadnego tekstu 'Oto wynik'.
           
-          Twoim zadaniem jest znaleźć te składniki:
-          - Cebula, Czosnek, Por, Szalotka
+          Szukaj składników High-FODMAP:
+          - Cebula, Czosnek, Szalotka, Por
           - Syrop glukozowo-fruktozowy, Fruktoza, Miód
-          - Pszenica, Żyto, Jęczmień (w dużych ilościach)
-          - Laktoza, Mleko (jeśli nie bez laktozy)
+          - Pszenica, Żyto (jeśli główny składnik)
+          - Laktoza, Mleko
           - Sorbitol, Ksylitol, Mannitol, Erytrytol
-          - Inulina, Błonnik z cykorii
-          
-          Format odpowiedzi:
-          {
-            "status": "RED" | "GREEN" | "UNKNOWN",
-            "found": ["lista", "wykrytych"],
-            "message": "Krótki komentarz po polsku"
-          }
+          - Inulina, Cykoria
 
-          Zasady:
-          1. Jeśli znajdziesz szkodliwe -> status "RED".
-          2. Jeśli skład jest czysty -> status "GREEN".
-          3. Jeśli zdjęcie jest niewyraźne, nie widać składu lub to nie jest jedzenie -> status "UNKNOWN" i message "Nie widzę listy składników".
-          `
+          Wzór odpowiedzi:
+          {
+            "status": "RED" (jeśli szkodliwe) lub "GREEN" (jeśli bezpieczne) lub "UNKNOWN" (jeśli nieczytelne),
+            "found": ["nazwa1", "nazwa2"],
+            "message": "Krótkie wyjaśnienie po polsku (max 1 zdanie)"
+          }`
         },
         {
           role: "user",
           content: [
             { 
+              type: "text", 
+              text: "Przeanalizuj to zdjęcie składu." 
+            },
+            {
               type: "image_url",
               image_url: {
                 url: image,
-                detail: "high" // Zmieniamy na HIGH dla lepszej precyzji (przy skompresowanym obrazku to bezpieczne)
+                detail: "high" // Lepsza jakość analizy
               },
             },
           ],
         },
       ],
-      max_tokens: 300,
+      max_tokens: 500,
     });
 
-    // Czyścimy odpowiedź (czasem AI dodaje ```json na początku)
-    let content = response.choices[0].message.content;
-    content = content.replace(/```json/g, '').replace(/```/g, '').trim();
+    const content = response.choices[0].message.content;
+    // console.log("📩 Odpowiedź AI (Raw):", content);
+
+    // 3. INTELIGENTNE CZYSZCZENIE JSONA (To naprawi błąd!)
+    let cleanJson = content;
+    
+    // a) Znajdź pierwszą klamrę { i ostatnią }
+    const firstBrace = content.indexOf('{');
+    const lastBrace = content.lastIndexOf('}');
+    
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      cleanJson = content.substring(firstBrace, lastBrace + 1);
+    }
 
     try {
-        const result = JSON.parse(content);
-        return NextResponse.json(result);
+      const result = JSON.parse(cleanJson);
+      return NextResponse.json(result);
     } catch (parseError) {
-        console.error("AI zwróciło błędny JSON:", content);
-        return NextResponse.json({ 
-            status: "UNKNOWN", 
-            found: [], 
-            message: "Błąd analizy danych od AI." 
-        });
+      console.error("❌ Błąd parsowania JSON:", parseError);
+      console.error("Treść której nie udało się sparsować:", cleanJson);
+      
+      // Fallback - jeśli AI zgłupiało, ale coś napisało
+      return NextResponse.json({
+        status: "UNKNOWN",
+        found: [],
+        message: "AI nie mogło przetworzyć odpowiedzi. Spróbuj wyraźniejszego zdjęcia."
+      });
     }
-    
+
   } catch (error) {
-    console.error("OpenAI Error:", error);
-    return NextResponse.json({ error: "Błąd połączenia z AI" }, { status: 500 });
+    console.error("❌ OpenAI Critical Error:", error);
+    return NextResponse.json({ error: "Błąd serwera AI: " + error.message }, { status: 500 });
   }
 }
