@@ -1,4 +1,6 @@
 // --- fodmap_rules.js ---
+// UWAGA: Ten plik jest zachowany dla kompatybilności wstecznej
+// Nowa wersja z rozszerzoną bazą: fodmap_analyzer.ts
 
 // 🔴 CZERWONA LISTA - Silne wyzwalacze (High FODMAP)
 // Jeśli znajdziemy COKOLWIEK stąd -> wynik jest CZERWONY.
