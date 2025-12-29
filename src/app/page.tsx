@@ -85,13 +85,7 @@ export default function LandingPage() {
 				<div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
 					{/* Lewa Strona: Copywriting */}
 					<motion.div style={{ y: yHero, opacity: opacityHero }} className="relative z-20">
-						<motion.div
-							initial={{ opacity: 0, y: 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.6 }}
-							className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur rounded-full border border-emerald-100 text-emerald-800 text-xs font-bold tracking-wide mb-8 shadow-sm">
-							<HeartPulse size={14} className="text-red-500" /> NOWOŚĆ: AI VISION 2.0
-						</motion.div>
+						
 
 						<motion.h1
 							initial={{ opacity: 0, y: 20 }}
