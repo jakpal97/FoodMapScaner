@@ -5,13 +5,13 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ScanBarcode, AlertTriangle, CheckCircle, XCircle, Loader2,
-  Camera, X, ArrowLeft, Zap, Upload, Leaf
+  Camera, X, ArrowLeft, Zap, Upload, Leaf, Sparkles
 } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { analyzeIngredients } from '@/app/fodmap_rules';
 import { LucideIcon } from 'lucide-react'
 
-// --- FUNKCJA KOMPRESJI (Wymagana dla AI) ---
+// --- FUNKCJA KOMPRESJI ---
 const compressImage = (base64Str: string, maxWidth = 1024, quality = 0.7): Promise<string> => {
   return new Promise((resolve) => {
     if (typeof window === 'undefined') { resolve(base64Str); return; }
@@ -55,22 +55,24 @@ interface ResultData {
 const ResultCard = ({ analysis, productName, productBrand, source }: { analysis: AnalysisResult, productName: string, productBrand: string, source: string }) => {
   const { status, found, message } = analysis;
 
+  // Kolory statusów muszą zostać (Czerwony/Żółty/Zielony) dla czytelności, 
+  // ale style zostały wyczyszczone (Solid colors).
   const statusConfig: Record<AnalysisStatus, { bg: string; border: string; text: string; icon: LucideIcon; title: string; indicator: string }> = {
     RED: {
       bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-700', icon: XCircle,
-      title: 'UNIKAJ', indicator: 'bg-red-500'
+      title: 'UNIKAJ', indicator: 'bg-red-600'
     },
     YELLOW: {
       bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', icon: AlertTriangle,
       title: 'OSTROŻNIE', indicator: 'bg-amber-500'
     },
     GREEN: {
-      bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', icon: CheckCircle,
-      title: 'BEZPIECZNE', indicator: 'bg-emerald-500'
+      bg: 'bg-lime-50', border: 'border-lime-200', text: 'text-lime-800', icon: CheckCircle,
+      title: 'BEZPIECZNE', indicator: 'bg-lime-600'
     },
     UNKNOWN: {
-      bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-600', icon: AlertTriangle,
-      title: 'Brak danych', indicator: 'bg-slate-400'
+      bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-600', icon: AlertTriangle,
+      title: 'Brak danych', indicator: 'bg-gray-400'
     },
   };
 
@@ -81,38 +83,37 @@ const ResultCard = ({ analysis, productName, productBrand, source }: { analysis:
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-3xl border ${config.border} ${config.bg} p-6 shadow-xl shadow-slate-200/50 relative overflow-hidden`}
+      className={`rounded-3xl border ${config.border} ${config.bg} p-6 relative overflow-hidden`}
     >
       <div className="relative z-10">
-        <div className="flex justify-between items-start mb-6 border-b border-slate-200/50 pb-4">
+        <div className="flex justify-between items-start mb-6 border-b border-black/5 pb-4">
           <div>
-            <h3 className="text-slate-900 text-xl font-bold leading-tight">{productName}</h3>
-            <p className="text-slate-500 text-sm mt-1">{productBrand}</p>
+            <h3 className="text-gray-900 text-xl font-bold leading-tight">{productName}</h3>
+            <p className="text-gray-500 text-sm mt-1">{productBrand}</p>
           </div>
           {source === 'AI' && (
-            // ZMIANA: Kolor badge'a na Teal zamiast Indigo
-            <span className="bg-teal-100 text-teal-800 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 border border-teal-200">
-              <Zap size={10} fill="currentColor" /> AI VISION
+            <span className="bg-lime-900 text-white text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1">
+              <Sparkles size={10} fill="currentColor" /> AI VISION
             </span>
           )}
         </div>
 
         <div className="flex items-center gap-4 mb-6">
-          <div className={`w-14 h-14 rounded-full ${config.indicator} flex items-center justify-center text-white shadow-lg shrink-0`}>
+          <div className={`w-14 h-14 rounded-2xl ${config.indicator} flex items-center justify-center text-white shrink-0`}>
             <Icon size={28} />
           </div>
           <div>
             <h4 className={`text-2xl font-bold ${config.text}`}>{config.title}</h4>
-            <p className="text-slate-600 text-sm font-medium mt-1">{message}</p>
+            <p className="text-gray-600 text-sm font-medium mt-1">{message}</p>
           </div>
         </div>
 
         {found.length > 0 && (
-          <div className="bg-white/60 rounded-xl p-4 border border-slate-200/60">
-            <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-3">Wykryte składniki:</p>
+          <div className="bg-white rounded-xl p-4 border border-gray-100">
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-3">Wykryte składniki:</p>
             <div className="flex flex-wrap gap-2">
               {found.map((item, index) => (
-                <span key={index} className="px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200 text-slate-700 shadow-sm capitalize">
+                <span key={index} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 text-gray-700 capitalize">
                   {item}
                 </span>
               ))}
@@ -250,18 +251,18 @@ export default function ScannerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAF9] text-slate-800 font-sans selection:bg-emerald-200">
+    <div className="min-h-screen bg-white text-lime-950 font-sans selection:bg-lime-200">
       
       {/* NAVBAR */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-emerald-100/50">
+      <nav className="fixed top-0 w-full z-50 bg-white border-b border-lime-100">
           <div className="max-w-md mx-auto px-4 h-16 flex items-center justify-between">
-              <Link href="/" className="flex items-center gap-2 text-slate-500 hover:text-emerald-700 transition-colors">
+              <Link href="/" className="flex items-center gap-2 text-lime-900 hover:text-lime-600 transition-colors">
                   <ArrowLeft size={20} />
                   <span className="text-sm font-bold">Wróć</span>
               </Link>
-              <div className="flex items-center gap-2 font-bold text-emerald-950">
-                  <Leaf size={18} className="text-emerald-500" />
-                  <span>Skaner Jelita</span>
+              <div className="flex items-center gap-2 font-bold text-lime-950">
+                  <Leaf size={18} className="text-lime-600" />
+                  <span>FoodPal</span>
               </div>
               <div className="w-8"></div>
           </div>
@@ -269,12 +270,12 @@ export default function ScannerPage() {
 
       <main className="pt-24 pb-20 px-4 max-w-md mx-auto flex flex-col items-center">
         
-        {/* TABS - ZMODYFIKOWANE KOLORY (TEAL ZAMIAST INDIGO) */}
-        <div className="w-full bg-white p-1.5 rounded-2xl flex mb-6 shadow-sm border border-slate-200">
+        {/* TABS - Czyste kolory avocado */}
+        <div className="w-full bg-lime-50 p-1.5 rounded-2xl flex mb-6 border border-lime-200">
           <button
             onClick={() => switchTab('scan')}
             className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
-              activeTab === 'scan' ? 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+              activeTab === 'scan' ? 'bg-lime-600 text-white shadow-none' : 'text-lime-700 hover:bg-lime-100'
             }`}
           >
             <ScanBarcode size={18} /> Kod EAN
@@ -282,11 +283,11 @@ export default function ScannerPage() {
           <button
             onClick={() => switchTab('ai-photo')}
             className={`flex-1 py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
-              // ZMIANA: TEAL zamiast INDIGO
-              activeTab === 'ai-photo' ? 'bg-teal-50 text-teal-800 ring-1 ring-teal-200 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+              // Dark Avocado dla AI Vision
+              activeTab === 'ai-photo' ? 'bg-lime-900 text-white shadow-none' : 'text-lime-700 hover:bg-lime-100'
             }`}
           >
-            <Zap size={18} /> AI Vision
+            <Sparkles size={18} /> AI Vision
           </button>
         </div>
 
@@ -295,14 +296,14 @@ export default function ScannerPage() {
           <div className="w-full flex flex-col gap-4">
             <AnimatePresence>
               {isCameraOpen ? (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="relative rounded-3xl overflow-hidden border-4 border-emerald-500 bg-black aspect-square shadow-2xl">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="relative rounded-3xl overflow-hidden border-4 border-lime-600 bg-black aspect-square">
                   <button onClick={stopBarcodeScanner} className="absolute top-4 right-4 text-white bg-black/50 p-2 rounded-full z-20 hover:bg-black/70"><X size={20} /></button>
                   <div id="reader" className="w-full h-full"></div>
                 </motion.div>
               ) : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
-                  <button onClick={startBarcodeScanner} className="w-full aspect-[4/3] bg-emerald-50 border-2 border-dashed border-emerald-200 rounded-2xl flex flex-col items-center justify-center gap-3 text-emerald-700 hover:bg-emerald-100 transition-colors group mb-6">
-                    <div className="p-4 bg-white rounded-full shadow-sm group-hover:scale-110 transition-transform text-emerald-600">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white p-6 rounded-3xl border border-lime-200">
+                  <button onClick={startBarcodeScanner} className="w-full aspect-[4/3] bg-lime-50 border-2 border-dashed border-lime-300 rounded-2xl flex flex-col items-center justify-center gap-3 text-lime-800 hover:bg-lime-100 transition-colors group mb-6">
+                    <div className="p-4 bg-white rounded-full shadow-none border border-lime-100 group-hover:scale-110 transition-transform text-lime-600">
                         <Camera size={32} />
                     </div>
                     <span className="font-bold">Uruchom Kamerę</span>
@@ -313,9 +314,9 @@ export default function ScannerPage() {
                       value={barcode}
                       onChange={(e) => setBarcode(e.target.value)}
                       placeholder="Lub wpisz kod EAN..."
-                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                      className="flex-1 bg-white border border-lime-200 rounded-xl px-4 text-lime-950 text-sm focus:outline-none focus:border-lime-600 transition-all placeholder:text-lime-900/40"
                     />
-                    <button onClick={() => handleScan(undefined)} className="bg-emerald-900 hover:bg-emerald-800 text-white rounded-xl px-5 flex items-center justify-center transition-colors shadow-lg shadow-emerald-900/20">
+                    <button onClick={() => handleScan(undefined)} className="bg-lime-950 hover:bg-lime-800 text-white rounded-xl px-5 flex items-center justify-center transition-colors">
                       {loading ? <Loader2 className="animate-spin" /> : <ScanBarcode size={20} />}
                     </button>
                   </div>
@@ -325,12 +326,12 @@ export default function ScannerPage() {
           </div>
         )}
 
-        {/* --- WIDOK 2: AI VISION (TERAZ W KOLORACH TEAL) --- */}
+        {/* --- WIDOK 2: AI VISION (CIEMNY MOTYW DLA AI) --- */}
         {activeTab === 'ai-photo' && (
           <div className="w-full flex flex-col gap-4">
             <AnimatePresence>
               {isCameraOpen ? (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="relative rounded-3xl overflow-hidden border-4 border-teal-500 bg-black aspect-[3/4] shadow-2xl">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="relative rounded-3xl overflow-hidden border-4 border-lime-800 bg-black aspect-[3/4]">
                   <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted></video>
                   <button onClick={stopAiCamera} className="absolute top-4 right-4 text-white bg-black/50 p-2 rounded-full z-20 hover:bg-black/70"><X size={20} /></button>
                   <div className="absolute bottom-6 left-0 right-0 flex justify-center z-20">
@@ -340,28 +341,31 @@ export default function ScannerPage() {
                   </div>
                 </motion.div>
               ) : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white p-6 rounded-3xl border border-teal-100 shadow-xl shadow-teal-900/5">
-                    {/* INFO BOX: ZMIANA NA TEAL */}
-                    <div className="bg-teal-50 p-4 rounded-2xl mb-6 text-center border border-teal-100">
-                        <h4 className="font-bold text-teal-900 mb-1">Inteligentna Analiza</h4>
-                        <p className="text-teal-800/70 text-sm">Zrób zdjęcie składu, a AI wykryje pułapki.</p>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white p-6 rounded-3xl border border-lime-200">
+                    {/* INFO BOX: DARK AVOCADO */}
+                    <div className="bg-lime-900 p-5 rounded-2xl mb-6 text-center">
+                        <div className="flex justify-center mb-2 text-lime-300">
+                            <Sparkles size={24} />
+                        </div>
+                        <h4 className="font-bold text-white mb-1">Inteligentna Analiza</h4>
+                        <p className="text-lime-200 text-sm">Zrób zdjęcie składu, a AI wykryje pułapki.</p>
                     </div>
                   
-                  {/* PRZYCISK: ZMIANA NA TEAL */}
-                  <button onClick={startAiCamera} className="w-full py-4 bg-teal-700 hover:bg-teal-800 text-white rounded-xl font-bold shadow-lg shadow-teal-900/20 flex items-center justify-center gap-2 mb-4 transition-all active:scale-[0.98]">
-                    <Camera size={20} /> Otwórz Aparat
-                  </button>
+                    {/* PRZYCISK */}
+                    <button onClick={startAiCamera} className="w-full py-4 bg-lime-600 hover:bg-lime-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 mb-4 transition-all active:scale-[0.98]">
+                      <Camera size={20} /> Otwórz Aparat
+                    </button>
 
-                  <div className="relative flex items-center gap-3 mb-4">
-                    <div className="h-px bg-slate-200 flex-1" />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">lub wgraj plik</span>
-                    <div className="h-px bg-slate-200 flex-1" />
-                  </div>
+                    <div className="relative flex items-center gap-3 mb-4">
+                      <div className="h-px bg-lime-100 flex-1" />
+                      <span className="text-[10px] font-bold text-lime-400 uppercase tracking-widest">lub wgraj plik</span>
+                      <div className="h-px bg-lime-100 flex-1" />
+                    </div>
 
-                  <label className="w-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors">
-                    <Upload size={18} /> Wybierz z galerii
-                    <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
-                  </label>
+                    <label className="w-full bg-white border border-lime-200 hover:bg-lime-50 text-lime-800 rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors">
+                      <Upload size={18} /> Wybierz z galerii
+                      <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                    </label>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -373,21 +377,21 @@ export default function ScannerPage() {
             <AnimatePresence mode="wait">
                 {loading && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-10">
-                        <Loader2 className="animate-spin mx-auto text-emerald-500 mb-3" size={32} />
-                        <p className="text-sm font-medium text-slate-400 animate-pulse">Analizuję produkt...</p>
+                        <Loader2 className="animate-spin mx-auto text-lime-600 mb-3" size={32} />
+                        <p className="text-sm font-bold text-lime-900 animate-pulse">Analizuję produkt...</p>
                     </motion.div>
                 )}
 
-                {/* BŁĄD -> PRZEKIEROWANIE DO AI (KOLOR TEAL) */}
+                {/* BŁĄD -> PRZEKIEROWANIE DO AI */}
                 {error === 'missing_product' && !loading && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white border border-slate-200 p-8 rounded-3xl text-center shadow-lg">
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white border border-lime-200 p-8 rounded-3xl text-center">
                         <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-3 text-amber-500">
                             <AlertTriangle size={24} />
                         </div>
-                        <h3 className="text-slate-900 font-bold mb-1">Brak w bazie</h3>
-                        <p className="text-slate-500 text-sm mb-6">Nie znaleźliśmy tego kodu.</p>
-                        <button onClick={() => switchTab('ai-photo')} className="w-full bg-teal-600 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-lg shadow-teal-900/20 hover:bg-teal-700 transition-all flex items-center justify-center gap-2">
-                            <Zap size={18} /> Użyj AI Vision
+                        <h3 className="text-lime-950 font-bold mb-1">Brak w bazie</h3>
+                        <p className="text-lime-800 text-sm mb-6">Nie znaleźliśmy tego kodu.</p>
+                        <button onClick={() => switchTab('ai-photo')} className="w-full bg-lime-900 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-lime-800 transition-all flex items-center justify-center gap-2">
+                            <Sparkles size={18} /> Użyj AI Vision
                         </button>
                     </motion.div>
                 )}
